@@ -1,0 +1,25 @@
+<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MUKI</title><style>:root{--bg:#08080a;--card:#14141c;--line:#2a2a35;--accent:#6c5cff;--momo:#ffcc00;--green:#00e676}body{margin:0;background:var(--bg);color:#fff;font-family:Inter,system-ui,sans-serif}.top{padding:12px 16px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between}a{color:#aaa}.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin:10px auto;max-width:640px}.big{font-size:28px;font-weight:900}.sub{color:#999;font-size:12px;line-height:1.5}button{padding:12px 16px;border-radius:12px;border:0;font-weight:900;cursor:pointer;width:100%;margin-top:6px;background:var(--accent);color:#fff}button.m{background:var(--momo);color:#000}input{width:100%;padding:12px;border-radius:10px;background:#000;border:1px solid #333;color:#fff;margin:6px 0;box-sizing:border-box}.row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #1c1c26}details{margin-top:8px}summary{cursor:pointer}pre{white-space:pre-wrap;font:inherit;color:#ccc}</style></head><body>
+<div class="top"><b>MUKI</b><span class="sub"><a href="revenue.html">Revenue</a></span></div>
+<div class="card"><div class="sub">Verified revenue (MTN-confirmed sales only)</div><div class="big" id="rev">UGX 0</div><div class="sub" id="fin"></div><div class="sub" id="next"></div></div>
+<div class="card"><b>Run the agents</b><div class="sub">CEO, research, planner, ads, social, sales and support agents build one business. Leave blank to let the CEO choose. Runs automatically at 2 AM Kampala time.</div>
+<input id="idea" placeholder="Idea (optional), e.g. Candles in Kampala"><input id="tok" type="password" placeholder="Admin token">
+<button onclick="run()">Run cycle</button><div id="log" class="sub"></div></div>
+<div id="list"></div>
+<script>
+const $=i=>document.getElementById(i),esc=s=>String(s??'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+async function load(){
+ const [b,l]=await Promise.all([fetch('/api/businesses').then(r=>r.json()),fetch('/api/ledger').then(r=>r.json())]);
+ const t=l.sales.filter(s=>s.live).reduce((a,s)=>a+s.amount,0);
+ $('rev').textContent='UGX '+t.toLocaleString();
+ $('fin').textContent=t>0?'Finance agent earned UGX '+Math.floor(t*.05).toLocaleString()+' (5%)':'Finance agent earns nothing until a real sale is confirmed.'+(l.live?'':' Running in sandbox: test payments are not counted.');
+ $('list').innerHTML=b.map(x=>'<div class="card"><b>'+esc(x.name)+'</b> · UGX '+x.price.toLocaleString()+'<div class="sub">'+esc(x.desc)+'</div><div class="sub">Sales link: <a href="pay.html?biz='+x.id+'">pay.html?biz='+x.id.slice(0,8)+'…</a></div>'+
+ Object.entries(x.work||{}).map(([k,v])=>'<details><summary>'+esc(k.replace('_',' '))+'</summary><pre>'+esc(typeof v==='string'?v:JSON.stringify(v,null,1))+'</pre></details>').join('')+'</div>').join('')||'<div class="card sub">No businesses yet. Run a cycle.</div>';
+}
+async function run(){
+ $('log').textContent='Agents working (up to 30 seconds)…';
+ const r=await fetch('/api/run',{method:'POST',headers:{'x-admin':$('tok').value},body:JSON.stringify({idea:$('idea').value})}),d=await r.json();
+ $('log').textContent=r.ok?'Built: '+d.name:'Failed: '+d.error; if(r.ok)load();
+}
+function tick(){const n=new Date(),x=new Date(n);x.setUTCHours(23,0,0,0);if(x<n)x.setUTCDate(x.getUTCDate()+1);const m=Math.floor((x-n)/60000);$('next').textContent='Next automatic cycle in '+Math.floor(m/60)+'h '+m%60+'m';}
+load();tick();setInterval(load,15000);setInterval(tick,60000);
+</script></body></html>

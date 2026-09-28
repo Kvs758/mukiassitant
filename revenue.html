@@ -1,0 +1,12 @@
+<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MUKI Revenue</title><style>:root{--bg:#08080a;--card:#14141c;--line:#2a2a35;--accent:#6c5cff;--momo:#ffcc00;--green:#00e676}body{margin:0;background:var(--bg);color:#fff;font-family:Inter,system-ui,sans-serif}.top{padding:12px 16px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between}a{color:#aaa}.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin:10px auto;max-width:640px}.big{font-size:28px;font-weight:900}.sub{color:#999;font-size:12px;line-height:1.5}button{padding:12px 16px;border-radius:12px;border:0;font-weight:900;cursor:pointer;width:100%;margin-top:6px;background:var(--accent);color:#fff}button.m{background:var(--momo);color:#000}input{width:100%;padding:12px;border-radius:10px;background:#000;border:1px solid #333;color:#fff;margin:6px 0;box-sizing:border-box}.row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #1c1c26}details{margin-top:8px}summary{cursor:pointer}pre{white-space:pre-wrap;font:inherit;color:#ccc}</style></head><body>
+<div class="top"><b>MUKI Revenue</b><a href="index.html" class="sub">Back</a></div>
+<div class="card"><div class="sub">Total collected (MTN-confirmed)</div><div class="big" id="t">UGX 0</div><div class="sub" id="f"></div></div>
+<div class="card"><b>Sales</b><div id="feed"></div></div>
+<script>
+const esc=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+async function r(){const l=await(await fetch('/api/ledger')).json(),t=l.sales.filter(s=>s.live).reduce((a,s)=>a+s.amount,0);
+ document.getElementById('t').textContent='UGX '+t.toLocaleString();
+ document.getElementById('f').textContent='Finance agent reward: UGX '+Math.floor(t*.05).toLocaleString()+(l.live?'':' (sandbox: test sales not counted)');
+ document.getElementById('feed').innerHTML=l.sales.map(s=>'<div class="row"><div><b>'+esc(s.business)+'</b><div class="sub">'+new Date(s.time).toLocaleString()+' · '+esc(s.customer)+(s.live?'':' · test')+'</div></div><b>+'+s.amount.toLocaleString()+'</b></div>').join('')||'<div class="sub">No confirmed sales yet.</div>'}
+r();setInterval(r,10000);
+</script></body></html>

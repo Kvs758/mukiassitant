@@ -1,0 +1,17 @@
+<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Pay with MTN MoMo</title><style>:root{--bg:#08080a;--card:#14141c;--line:#2a2a35;--accent:#6c5cff;--momo:#ffcc00;--green:#00e676}body{margin:0;background:var(--bg);color:#fff;font-family:Inter,system-ui,sans-serif}.top{padding:12px 16px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between}a{color:#aaa}.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin:10px auto;max-width:640px}.big{font-size:28px;font-weight:900}.sub{color:#999;font-size:12px;line-height:1.5}button{padding:12px 16px;border-radius:12px;border:0;font-weight:900;cursor:pointer;width:100%;margin-top:6px;background:var(--accent);color:#fff}button.m{background:var(--momo);color:#000}input{width:100%;padding:12px;border-radius:10px;background:#000;border:1px solid #333;color:#fff;margin:6px 0;box-sizing:border-box}.row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #1c1c26}details{margin-top:8px}summary{cursor:pointer}pre{white-space:pre-wrap;font:inherit;color:#ccc}</style></head><body>
+<div class="card" style="margin-top:40px"><h2 id="n">Loading…</h2><div class="sub" id="d"></div><div class="big" id="p"></div>
+<input id="ph" inputmode="numeric" placeholder="MTN number, e.g. 256772123456"><button class="m" id="b" onclick="pay()">Pay with MTN MoMo</button><div id="s" class="sub" style="margin-top:12px"></div></div>
+<script>
+const $=i=>document.getElementById(i);let biz;
+fetch('/api/business?id='+new URLSearchParams(location.search).get('biz')).then(r=>r.json()).then(b=>{if(b.error){$('n').textContent='Business not found';$('b').disabled=true;return}biz=b;$('n').textContent=b.name;$('d').textContent=b.desc;$('p').textContent='UGX '+b.price.toLocaleString()});
+async function pay(){
+ $('b').disabled=true;$('s').textContent='Sending request to your phone…';
+ const r=await fetch('/api/pay',{method:'POST',body:JSON.stringify({bizId:biz.id,phone:$('ph').value.trim()})}),d=await r.json();
+ if(!r.ok){$('s').textContent=d.error;$('b').disabled=false;return}
+ $('s').textContent='Approve the payment with your MoMo PIN on your phone.';
+ for(let i=0;i<40;i++){await new Promise(r=>setTimeout(r,3000));const s=(await(await fetch('/api/status?ref='+d.ref)).json()).status;
+  if(s==='SUCCESSFUL'){$('s').textContent='Payment received. Thank you!';return}
+  if(s==='FAILED'){$('s').textContent='Payment was declined or failed. Try again.';$('b').disabled=false;return}}
+ $('s').textContent='Still waiting. If you approved, refresh in a minute.';$('b').disabled=false;
+}
+</script></body></html>
